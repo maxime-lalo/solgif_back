@@ -20,12 +20,31 @@ pub mod myepicproject {
     let item = ItemStruct {
       gif_link: gif_link.to_string(),
       user_address: *user.to_account_info().key,
+      voters: Vec::new()
     };
 		
 	// Add it to the gif_list vector.
     base_account.gif_list.push(item);
     base_account.total_gifs += 1;
     Ok(())
+  }
+
+  pub fn vote_gif(ctx: Context<VoteGif>, gif_link: String, gif_uploader: Pubkey) -> ProgramResult {
+      let base_account = &mut ctx.accounts.base_account;
+      let user = &mut ctx.accounts.user;
+      
+      for gif in &mut base_account.gif_list {
+          if gif.gif_link == gif_link && gif.user_address == gif_uploader{
+
+              if gif.voters.contains(&*user.to_account_info().key) {
+                panic!("You already upvoted this gif")
+              }
+
+              gif.voters.push(*user.to_account_info().key) 
+          }
+      }
+
+      Ok(())
   }
 }
 
@@ -47,11 +66,20 @@ pub struct AddGif<'info> {
   pub user: Signer<'info>,
 }
 
+#[derive(Accounts)]
+pub struct VoteGif<'info> {
+  #[account(mut)]
+  pub base_account: Account<'info, BaseAccount>,
+  #[account(mut)]
+  pub user: Signer<'info>,
+}
+
 // Create a custom struct for us to work with.
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct ItemStruct {
     pub gif_link: String,
     pub user_address: Pubkey,
+    pub voters: Vec<Pubkey>
 }
 
 #[account]

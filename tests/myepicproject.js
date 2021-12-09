@@ -33,6 +33,16 @@ const main = async () => {
         }
     )
 
+    await program.rpc.voteGif(
+        "https://giphy.com/gifs/theoffice-b8RfbQFaOs1rO10ren",
+        provider.wallet.publicKey,
+        {
+            accounts: {
+                baseAccount: baseAccount.publicKey,
+                user: provider.wallet.publicKey,
+            },
+        }
+    )
     // Call the account.
     account = await program.account.baseAccount.fetch(baseAccount.publicKey)
     console.log("👀 GIF Count", account.totalGifs.toString())
