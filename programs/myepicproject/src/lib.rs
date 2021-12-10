@@ -20,7 +20,8 @@ pub mod myepicproject {
     let item = ItemStruct {
       gif_link: gif_link.to_string(),
       user_address: *user.to_account_info().key,
-      voters: Vec::new()
+      up_voters: Vec::new(),
+      down_voters: Vec::new()
     };
 		
 	// Add it to the gif_list vector.
@@ -29,18 +30,43 @@ pub mod myepicproject {
     Ok(())
   }
 
-  pub fn vote_gif(ctx: Context<VoteGif>, gif_link: String, gif_uploader: Pubkey) -> ProgramResult {
+  pub fn upvote_gif(ctx: Context<VoteGif>, gif_link: String, gif_uploader: Pubkey) -> ProgramResult {
       let base_account = &mut ctx.accounts.base_account;
       let user = &mut ctx.accounts.user;
       
       for gif in &mut base_account.gif_list {
           if gif.gif_link == gif_link && gif.user_address == gif_uploader{
 
-              if gif.voters.contains(&*user.to_account_info().key) {
+              if gif.up_voters.contains(&*user.to_account_info().key) {
                 panic!("You already upvoted this gif")
               }
 
-              gif.voters.push(*user.to_account_info().key) 
+              if gif.down_voters.contains(&*user.to_account_info().key){
+                gif.down_voters.retain(|&x| x != *user.to_account_info().key);
+              }
+              gif.up_voters.push(*user.to_account_info().key) 
+          }
+      }
+
+      Ok(())
+  }
+
+    pub fn downvote_gif(ctx: Context<VoteGif>, gif_link: String, gif_uploader: Pubkey) -> ProgramResult {
+      let base_account = &mut ctx.accounts.base_account;
+      let user = &mut ctx.accounts.user;
+      
+      for gif in &mut base_account.gif_list {
+          if gif.gif_link == gif_link && gif.user_address == gif_uploader{
+
+              if gif.down_voters.contains(&*user.to_account_info().key) {
+                panic!("You already downvoted this gif")
+              }
+
+              if gif.up_voters.contains(&*user.to_account_info().key){
+                gif.up_voters.retain(|&x| x != *user.to_account_info().key);
+              }
+
+              gif.down_voters.push(*user.to_account_info().key) 
           }
       }
 
@@ -79,7 +105,8 @@ pub struct VoteGif<'info> {
 pub struct ItemStruct {
     pub gif_link: String,
     pub user_address: Pubkey,
-    pub voters: Vec<Pubkey>
+    pub up_voters: Vec<Pubkey>,
+    pub down_voters: Vec<Pubkey>,
 }
 
 #[account]
